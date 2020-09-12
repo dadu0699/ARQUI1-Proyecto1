@@ -97,6 +97,12 @@ int contadorIntentos = 0;
 String pass = "";
 // END LOGIN ------------
 
+// Usuario
+typedef struct Usuario {
+  char identificacion[10];
+  char contrasenia[8];
+};
+
 void setup() {
   Serial.begin(9600);
 
@@ -128,17 +134,43 @@ void setup() {
   pinMode(IO3, OUTPUT);
   pinMode(IO4, OUTPUT);
 
-  mensajePrincipal();
+  // crearAdministrador();
+  int eeAddress = sizeof(Usuario);
+  Usuario customVar2;
+  EEPROM.get(eeAddress, customVar2);
+  Serial.println( "Estructura leida: " );
+  Serial.println( customVar2.identificacion );
+  Serial.println( customVar2.contrasenia );
+
+  // mensajePrincipal();
 }
 
 void loop() {
-  if (!loggeado) {
-    //controlPorton();
+  /*
+    if (!loggeado) {
     //login();
-    //barraTransportadora();
-  } else {
+    } else {
     controlPorton();
     barraTransportadora();
+    }
+  */
+}
+
+void crearAdministrador() {
+  limpiarEEPROM();
+
+  int eeAddress = 0;
+  Usuario administrador = {
+    {'2', '0', '1', '8', '0'},
+    {'0', '1', '0', '6'}
+  };
+  eeAddress += sizeof(Usuario);
+  EEPROM.put(eeAddress, administrador);
+}
+
+void limpiarEEPROM() {
+  for (int i = 0; i < EEPROM.length(); i++) {
+    EEPROM.write(i, 0);
   }
 }
 
