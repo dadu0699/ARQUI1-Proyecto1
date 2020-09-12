@@ -29,7 +29,8 @@ int PORTON = 25;
 int posicion = 0;
 int portonAbierto = 24; //led porton abierto ROJO
 int portonCerrado = 23; //led porton cerrado AMARRILLO
-//int buzzerP = 22; //buzzer de cerrado
+int buzzerP = 22; //buzzer de cerrado
+int WIFI = 53; //Señal de la app
 // END SERVO MOTOR -------------------
 
 
@@ -113,9 +114,10 @@ void setup() {
   pinMode(PORTON, OUTPUT);
   pinMode(portonAbierto, OUTPUT);
   pinMode(portonCerrado, OUTPUT);
+  pinMode(buzzerP, OUTPUT);
+  pinMode(WIFI, INPUT);
 
-
-  // Barra T 
+  // Barra T
   pinMode(BLAB1, INPUT);  // Señal de Bluetooth (Quitar DESPUES)
   pinMode(BLAB2, INPUT);  // Señal de Bluetooth (Quitar DESPUES)
   pinMode(LAB1, INPUT);
@@ -126,17 +128,16 @@ void setup() {
   pinMode(IO3, OUTPUT);
   pinMode(IO4, OUTPUT);
 
-
   mensajePrincipal();
 }
 
 void loop() {
   if (!loggeado) {
-    // login();
-    //controlPorton();
-    barraTransportadora(); 
+    controlPorton();
+    //login();
   } else {
     controlPorton();
+    barraTransportadora();
   }
 }
 
@@ -173,7 +174,8 @@ void login() {
 
 
 void controlPorton() {
-  posicion = 1;
+  posicion = digitalRead(WIFI);
+  // posicion = 1;
 
   if (posicion == 1) { //encender led por 6 seg al terminar se cierra el porton
     Serial.println(">> HIGH");
@@ -181,15 +183,17 @@ void controlPorton() {
     abrirPorton();
 
     Serial.println(">> LED ROJA");
-    digitalWrite(portonAbierto, HIGH); //No enciende la led Roja
-    delay(6000);
+    digitalWrite(portonAbierto, HIGH);
+    for (int i = 0; i <= 6000; i++) {
+      posicion = digitalRead(WIFI);
+      if (posicion != 1) {
+        break;
+      }
+      delay(1);
+    }
     digitalWrite(portonAbierto, LOW);
 
     posicion = 0;
-    cerrarPorton();
-
-  } else {       //Controlar que cuando se apague si se apague y no esperar a los 6 seg
-    Serial.println(">> LOW");
     cerrarPorton();
   }
 }
@@ -210,13 +214,15 @@ void cerrarPorton() {     // 2 vueltas izquierda
   }
 
   Serial.println(">> LED AMARILLA");
+  digitalWrite(buzzerP, HIGH);
   digitalWrite(portonCerrado, HIGH);
   delay(3000);
+  digitalWrite(buzzerP, LOW);
   digitalWrite(portonCerrado, LOW);
 }
 
 
-// BARRA TRANSPORTADORA 
+// BARRA TRANSPORTADORA
 void barraTransportadora() {
   if (digitalRead(BLAB1)) {
     Lab1 = true;
@@ -243,15 +249,13 @@ void haciaLab1() { // HACIA LA DERECHA SENTIDO HORARIO
   if (digitalRead(LAB2) == HIGH) {
     while (digitalRead(LAB1) == LOW) {
       secuenciaUnPaso();
-      
+
     }
-    Serial.println("Llego el paquete al Laboratorio 1"); 
+    Serial.println("Llego el paquete al Laboratorio 1");
     Lab2 = false;
   } else {
     Serial.println("No se ha cargado ningun paquete en el Laboratorio 2");
   }
-
-
 }
 
 void haciaLab2() { // HACIA LA IZQUIERDA SENTIDO ANTIHORARIO
