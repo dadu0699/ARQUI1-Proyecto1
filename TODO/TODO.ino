@@ -133,8 +133,9 @@ void setup() {
 
 void loop() {
   if (!loggeado) {
-    controlPorton();
+    //controlPorton();
     //login();
+    //barraTransportadora(); 
   } else {
     controlPorton();
     barraTransportadora();
@@ -247,15 +248,20 @@ void haciaLab1() { // HACIA LA DERECHA SENTIDO HORARIO
   Cpasos = -1;
 
   if (digitalRead(LAB2) == HIGH) {
+    //buzzerLAB(); 
     while (digitalRead(LAB1) == LOW) {
       secuenciaUnPaso();
-
+      mensajeLab("Corriendo hacia", "la Derecha"); 
     }
-    Serial.println("Llego el paquete al Laboratorio 1");
+    mensajeLab("La muestra llego", "al LAB 1");
+    Serial.println("Llego el paquete al Laboratorio 1"); 
     Lab2 = false;
   } else {
-    Serial.println("No se ha cargado ningun paquete en el Laboratorio 2");
+    mensajeLab("Poner Muestra", "en la banda LAB2"); 
+    Serial.println("No se ha cargado ningun paquete en el Laboratorio 2");    
   }
+
+
 }
 
 void haciaLab2() { // HACIA LA IZQUIERDA SENTIDO ANTIHORARIO
@@ -263,12 +269,16 @@ void haciaLab2() { // HACIA LA IZQUIERDA SENTIDO ANTIHORARIO
   horario = 0;
   Cpasos = paso;
   if (digitalRead(LAB1) == HIGH) {
+    //buzzerLAB(); 
     while (digitalRead(LAB2) == LOW) {
       secuenciaUnPaso();
+      mensajeLab("Corriendo hacia", "la Izquierda");
     }
+    mensajeLab("La muestra llego", "al LAB 2");
     Serial.println("Llego el paquete al Laboratorio 2");
     Lab1 = false;
   } else {
+    mensajeLab("Poner Muestra", "en la banda LAB1"); 
     Serial.println("No se ha cargado ningun paquete en Laboratorio 1");
   }
 }
@@ -295,4 +305,14 @@ void puerto(int bits, int inicio, int fin) {
   for (int i = inicio; i <= fin; i++) {
     digitalWrite(i, bitRead(bits, i - inicio));
   }
+}
+
+void mensajeLab(String mensaje1, String mensaje2){
+  lcd.home();
+  lcd.setCursor(0, 0);
+  lcd.print(mensaje1);
+  lcd.setCursor(0, 1);
+  lcd.print(mensaje2); 
+  delay(1500); 
+  lcd.clear();
 }
