@@ -19,8 +19,6 @@ char keys[rows][cols] = {
 };
 byte rowPins[rows] = {2, 3, 4, 5};
 byte colPins[cols] = {6, 7, 8, 9};
-int i = 0;
-char arr[10];
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, rows, cols);
 // END Keypad --------------------
 
@@ -84,9 +82,9 @@ void loop() {
 void mensajePrincipal() {
   lcd.home();
   lcd.setCursor(1, 0);
-  lcd.write(byte(2));
+  lcd.write(byte(0));
   lcd.print(" BIENVENIDO ");
-  lcd.write(byte(2));
+  lcd.write(byte(0));
   delay(5000);
   lcd.clear();
 }
