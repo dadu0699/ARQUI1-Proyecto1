@@ -32,6 +32,33 @@ int portonCerrado = 23; //led porton cerrado AMARRILLO
 //int buzzerP = 22; //buzzer de cerrado
 // END SERVO MOTOR -------------------
 
+
+/* PINES PARA LA BARRA TRANSPORTADORA */
+int IO1 = 10;
+int IO2 = 11;
+int IO3 = 12;
+int IO4 = 13;
+
+int BLAB1 = 43; // Señal de Bluetooth (Quitar DESPUES)
+int BLAB2 = 44; // Señal de Bluetooth (Quitar DESPUES)
+int LAB1 = 41;
+int LAB2 = 42;
+
+/* VARIABLES PARA LA BARRA TRANSPORTADORA */
+int paso = 4;
+int Cpasos = 0;
+int horario = 1;
+int velocidad = 1000;
+boolean Lab1 = false;
+boolean Lab2 = false;
+
+const int unPaso[4] = {
+  B1000,
+  B0100,
+  B0010,
+  B0001
+};
+
 // EMOJIS --------------
 byte candado[8] = {
   B11111,
@@ -87,13 +114,27 @@ void setup() {
   pinMode(portonAbierto, OUTPUT);
   pinMode(portonCerrado, OUTPUT);
 
+
+  // Barra T 
+  pinMode(BLAB1, INPUT);  // Señal de Bluetooth (Quitar DESPUES)
+  pinMode(BLAB2, INPUT);  // Señal de Bluetooth (Quitar DESPUES)
+  pinMode(LAB1, INPUT);
+  pinMode(LAB2, INPUT);
+
+  pinMode(IO1, OUTPUT);
+  pinMode(IO2, OUTPUT);
+  pinMode(IO3, OUTPUT);
+  pinMode(IO4, OUTPUT);
+
+
   mensajePrincipal();
 }
 
 void loop() {
   if (!loggeado) {
     // login();
-    controlPorton();
+    //controlPorton();
+    barraTransportadora(); 
   } else {
     controlPorton();
   }
@@ -172,4 +213,82 @@ void cerrarPorton() {     // 2 vueltas izquierda
   digitalWrite(portonCerrado, HIGH);
   delay(3000);
   digitalWrite(portonCerrado, LOW);
+}
+
+
+// BARRA TRANSPORTADORA 
+void barraTransportadora() {
+  if (digitalRead(BLAB1)) {
+    Lab1 = true;
+  }
+
+  if ( digitalRead(BLAB2)) {
+    Lab2 = true;
+  }
+
+  if (Lab1) {
+    haciaLab2();
+  }
+  if (Lab2) {
+    haciaLab1();
+  }
+
+}
+
+void haciaLab1() { // HACIA LA DERECHA SENTIDO HORARIO
+  delay(100);
+  horario = 1;
+  Cpasos = -1;
+
+  if (digitalRead(LAB2) == HIGH) {
+    while (digitalRead(LAB1) == LOW) {
+      secuenciaUnPaso();
+      
+    }
+    Serial.println("Llego el paquete al Laboratorio 1"); 
+    Lab2 = false;
+  } else {
+    Serial.println("No se ha cargado ningun paquete en el Laboratorio 2");
+  }
+
+
+}
+
+void haciaLab2() { // HACIA LA IZQUIERDA SENTIDO ANTIHORARIO
+  delay(100);
+  horario = 0;
+  Cpasos = paso;
+  if (digitalRead(LAB1) == HIGH) {
+    while (digitalRead(LAB2) == LOW) {
+      secuenciaUnPaso();
+    }
+    Serial.println("Llego el paquete al Laboratorio 2");
+    Lab1 = false;
+  } else {
+    Serial.println("No se ha cargado ningun paquete en Laboratorio 1");
+  }
+}
+
+void secuenciaUnPaso() {
+  if (horario == 1) {
+    Cpasos++;
+    if (Cpasos >= paso) {
+      Cpasos = 0;
+    }
+  } else {
+    Cpasos--;
+    if (Cpasos < 0) {
+      Cpasos = paso - 1;
+    }
+  }
+
+  puerto(unPaso[Cpasos], IO1, IO4);
+  paso = 4 ;
+  delay(velocidad);
+}
+
+void puerto(int bits, int inicio, int fin) {
+  for (int i = inicio; i <= fin; i++) {
+    digitalWrite(i, bitRead(bits, i - inicio));
+  }
 }
