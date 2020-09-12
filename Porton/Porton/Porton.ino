@@ -1,3 +1,4 @@
+#include <pitches.h>
 #include <Servo.h>
 
 // SERVO MOTOR
@@ -9,6 +10,16 @@ int portonCerrado = 7;//led porton cerrado AMARRILLO
 int WIFI = 12; //Señal de la app
 int buzzerP = 8; //buzzer de cerrado
 
+int melody[] = {
+    NOTE_A4, NOTE_D4, NOTE_F4, NOTE_G4, NOTE_A4, NOTE_D4, NOTE_F4, NOTE_G4, NOTE_E4,
+    NOTE_G4, NOTE_C4, NOTE_F4, NOTE_E4, NOTE_G4, NOTE_C4, NOTE_F4, NOTE_E4, NOTE_D4
+   
+};
+int DuracionNotas[] = {
+  2, 2, 4, 4, 2, 2, 4, 4, 1, 2, 2, 4, 4, 2, 2, 4, 4, 1,
+};
+
+
 void setup() {
   Serial.begin(9600);
 
@@ -18,10 +29,13 @@ void setup() {
   pinMode(portonCerrado, OUTPUT);
   pinMode(WIFI, INPUT);
   pinMode(buzzerP, OUTPUT);
+
+   cancion();
 }
 
 void loop() {
-  controlPorton();
+  //controlPorton();
+ 
 }
 
 void controlPorton() {
@@ -71,4 +85,24 @@ void cerrarPorton() {     // 2 vueltas izquierda
   digitalWrite(buzzerP, LOW);
   digitalWrite(portonCerrado, LOW);
   
+}
+
+void cancion(){
+  // Notas de la melodia, :
+  for (int Nota = 0; Nota < 18; Nota++) {
+
+    // calculo de la duracin de la nota, dividimos un segundo por el tipo de nota
+    
+    int Duracion = 1000 / DuracionNotas[Nota];
+// pin usado numero 6
+    tone(8, melody[Nota], Duracion);
+
+    // para oir bien la melodia entre notas aadimos un retardo de un 40%
+    
+    int pausa = Duracion * 1.40;
+       delay(pausa);
+    
+    // Paramos la melodia
+    noTone(6);
+  }
 }
