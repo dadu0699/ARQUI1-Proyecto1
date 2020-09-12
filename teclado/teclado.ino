@@ -29,8 +29,36 @@ int PORTON = 25;
 int posicion = 0;
 int portonAbierto = 24; //led porton abierto ROJO
 int portonCerrado = 23; //led porton cerrado AMARRILLO
-//int buzzerP = 22; //buzzer de cerrado
+int buzzerP = 22; //buzzer de cerrado
+int WIFI = 53; //Señal de la app
 // END SERVO MOTOR -------------------
+
+
+/* PINES PARA LA BARRA TRANSPORTADORA */
+int IO1 = 10;
+int IO2 = 11;
+int IO3 = 12;
+int IO4 = 13;
+
+int BLAB1 = 43; // Señal de Bluetooth (Quitar DESPUES)
+int BLAB2 = 44; // Señal de Bluetooth (Quitar DESPUES)
+int LAB1 = 41;
+int LAB2 = 42;
+
+/* VARIABLES PARA LA BARRA TRANSPORTADORA */
+int paso = 4;
+int Cpasos = 0;
+int horario = 1;
+int velocidad = 1000;
+boolean Lab1 = false;
+boolean Lab2 = false;
+
+const int unPaso[4] = {
+  B1000,
+  B0100,
+  B0010,
+  B0001
+};
 
 // EMOJIS --------------
 byte candado[8] = {
@@ -69,6 +97,12 @@ int contadorIntentos = 0;
 String pass = "";
 // END LOGIN ------------
 
+// Usuario
+struct Usuario {
+  String identificacion;
+  String contrasenia;
+};
+
 void setup() {
   Serial.begin(9600);
 
@@ -86,16 +120,57 @@ void setup() {
   pinMode(PORTON, OUTPUT);
   pinMode(portonAbierto, OUTPUT);
   pinMode(portonCerrado, OUTPUT);
+  pinMode(buzzerP, OUTPUT);
+  pinMode(WIFI, INPUT);
+
+  // Barra T
+  pinMode(BLAB1, INPUT);  // Señal de Bluetooth (Quitar DESPUES)
+  pinMode(BLAB2, INPUT);  // Señal de Bluetooth (Quitar DESPUES)
+  pinMode(LAB1, INPUT);
+  pinMode(LAB2, INPUT);
+
+  pinMode(IO1, OUTPUT);
+  pinMode(IO2, OUTPUT);
+  pinMode(IO3, OUTPUT);
+  pinMode(IO4, OUTPUT);
+
+  // crearAdministrador();
+  int eeAddress = sizeof(Usuario);
+  Usuario customVar2;
+  EEPROM.get(eeAddress, customVar2);
+  Serial.println( "Estructura leida: " );
+  Serial.println( customVar2.identificacion );
+  Serial.println( customVar2.contrasenia );
 
   mensajePrincipal();
 }
 
 void loop() {
-  if (!loggeado) {
-    // login();
+  /*
+    if (!loggeado) {
+    login();
+    } else {
     controlPorton();
-  } else {
-    controlPorton();
+    barraTransportadora();
+    }
+  */
+}
+
+void crearAdministrador() {
+  limpiarEEPROM();
+
+  int eeAddress = 0;
+  Usuario administrador = {
+    "20180",
+    "0106"
+  };
+  eeAddress += sizeof(Usuario);
+  EEPROM.put(eeAddress, administrador);
+}
+
+void limpiarEEPROM() {
+  for (int i = 0 ; i < EEPROM.length() ; i++) {
+    EEPROM.write(i, 0);
   }
 }
 
@@ -132,7 +207,8 @@ void login() {
 
 
 void controlPorton() {
-  posicion = 1;
+  posicion = digitalRead(WIFI);
+  // posicion = 1;
 
   if (posicion == 1) { //encender led por 6 seg al terminar se cierra el porton
     Serial.println(">> HIGH");
@@ -140,15 +216,17 @@ void controlPorton() {
     abrirPorton();
 
     Serial.println(">> LED ROJA");
-    digitalWrite(portonAbierto, HIGH); //No enciende la led Roja
-    delay(6000);
+    digitalWrite(portonAbierto, HIGH);
+    for (int i = 0; i <= 6000; i++) {
+      posicion = digitalRead(WIFI);
+      if (posicion != 1) {
+        break;
+      }
+      delay(1);
+    }
     digitalWrite(portonAbierto, LOW);
 
     posicion = 0;
-    cerrarPorton();
-
-  } else {       //Controlar que cuando se apague si se apague y no esperar a los 6 seg
-    Serial.println(">> LOW");
     cerrarPorton();
   }
 }
@@ -169,7 +247,85 @@ void cerrarPorton() {     // 2 vueltas izquierda
   }
 
   Serial.println(">> LED AMARILLA");
+  digitalWrite(buzzerP, HIGH);
   digitalWrite(portonCerrado, HIGH);
   delay(3000);
+  digitalWrite(buzzerP, LOW);
   digitalWrite(portonCerrado, LOW);
+}
+
+
+// BARRA TRANSPORTADORA
+void barraTransportadora() {
+  if (digitalRead(BLAB1)) {
+    Lab1 = true;
+  }
+
+  if ( digitalRead(BLAB2)) {
+    Lab2 = true;
+  }
+
+  if (Lab1) {
+    haciaLab2();
+  }
+  if (Lab2) {
+    haciaLab1();
+  }
+
+}
+
+void haciaLab1() { // HACIA LA DERECHA SENTIDO HORARIO
+  delay(100);
+  horario = 1;
+  Cpasos = -1;
+
+  if (digitalRead(LAB2) == HIGH) {
+    while (digitalRead(LAB1) == LOW) {
+      secuenciaUnPaso();
+
+    }
+    Serial.println("Llego el paquete al Laboratorio 1");
+    Lab2 = false;
+  } else {
+    Serial.println("No se ha cargado ningun paquete en el Laboratorio 2");
+  }
+}
+
+void haciaLab2() { // HACIA LA IZQUIERDA SENTIDO ANTIHORARIO
+  delay(100);
+  horario = 0;
+  Cpasos = paso;
+  if (digitalRead(LAB1) == HIGH) {
+    while (digitalRead(LAB2) == LOW) {
+      secuenciaUnPaso();
+    }
+    Serial.println("Llego el paquete al Laboratorio 2");
+    Lab1 = false;
+  } else {
+    Serial.println("No se ha cargado ningun paquete en Laboratorio 1");
+  }
+}
+
+void secuenciaUnPaso() {
+  if (horario == 1) {
+    Cpasos++;
+    if (Cpasos >= paso) {
+      Cpasos = 0;
+    }
+  } else {
+    Cpasos--;
+    if (Cpasos < 0) {
+      Cpasos = paso - 1;
+    }
+  }
+
+  puerto(unPaso[Cpasos], IO1, IO4);
+  paso = 4 ;
+  delay(velocidad);
+}
+
+void puerto(int bits, int inicio, int fin) {
+  for (int i = inicio; i <= fin; i++) {
+    digitalWrite(i, bitRead(bits, i - inicio));
+  }
 }

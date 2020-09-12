@@ -1,4 +1,4 @@
-
 *.pdsbak
 *.workspace
 *.log
+*.hex
