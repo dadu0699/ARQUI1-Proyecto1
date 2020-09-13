@@ -102,6 +102,7 @@ int IO52LOG = 52;
 boolean logueado = false;
 int contadorIntentos = 0;
 int registro = 0;
+long randomNumber;
 // END LOGIN ------------
 
 // Usuario
@@ -150,8 +151,8 @@ void setup() {
   // LOGIN
   pinMode(IO52LOG, OUTPUT);
   // crearAdministrador();
-  // registrarEEPROM("3576678", "46845");
-  // Serial.println(buscarEEPROM("201800491", "0611"));
+  EEPROM.get(0, registro);
+  randomSeed(registro);
 
   mensajePrincipal();
 }
@@ -185,15 +186,14 @@ bool buscarEEPROM(String usr, String pwd) {
     EEPROM.get(i, temp);
     rUSR = temp.identificacion;
     rPWD = temp.contrasenia;
-
-    Serial.println("Estructura leida: ");
-    Serial.println(temp.identificacion);
-    Serial.println(temp.contrasenia);
-
+    Serial.println("-----------------");
+    Serial.println(rUSR);
+    Serial.println(rPWD);
+    Serial.println("-----------------");
     if (rUSR.equals(usr) && rPWD.equals(pwd)) {
       return true;
     }
-    delay(50);
+    delay(100);
   }
 
   return false;
@@ -224,20 +224,20 @@ void registrarEEPROM(String user, String password) {
 
   for (int i = 0; i < user.length(); i++) {
     nuevoUsuario.identificacion[i] = user.charAt(i);
-    delay(50);
+    delay(75);
   }
   for (int i = 0; i < password.length(); i++) {
     nuevoUsuario.contrasenia[i] = password.charAt(i);
-    delay(50);
+    delay(75);
   }
 
   EEPROM.get(0, registro);
   EEPROM.put(registro, nuevoUsuario);
-  delay(50);
+  delay(75);
 
   registro += sizeof(Usuario);
   EEPROM.update(0, registro);
-  delay(50);
+  delay(75);
 }
 
 void mensajePrincipal() {
@@ -252,12 +252,56 @@ void mensajePrincipal() {
 
 void login() {
   lcd.clear();
+
+  if (contadorIntentos < 4) {
+    String pass = "";
+    char key;
+
+    do {
+      lcd.setCursor(0, 0);
+      lcd.print("DIGITE SU CLAVE");
+      lcd.setCursor(0, 1);
+      lcd.print(pass);
+
+      key = keypad.getKey();
+      if (key && key != '#') {
+        pass += key;
+      }
+
+      if (pass.length() > 8) {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("MAX 8 CARACTERES");
+        delay(2000);
+        pass = "";
+        lcd.clear();
+      }
+    } while (key != '#');
+
+    if (pass == "0000") {
+      registrarUsuario();
+    } else {
+      iniciarSesion(pass);
+    }
+  } else {
+    lcd.setCursor(0, 0);
+    lcd.print("SIST.  BLOQUEADO");
+    lcd.setCursor(0, 1);
+    lcd.print("AVISE AL GERENTE");
+    delay(2000);
+    avisoGerente();
+  }
+}
+
+void avisoGerente() {
   String pass = "";
+  String user = "";
   char key;
 
+  lcd.clear();
   do {
     lcd.setCursor(0, 0);
-    lcd.print("DIGITE SU CLAVE");
+    lcd.print("CLAVE GERENTE");
     lcd.setCursor(0, 1);
     lcd.print(pass);
 
@@ -276,25 +320,50 @@ void login() {
     }
   } while (key != '#');
 
-  Serial.println(pass);
-
-  if (pass == "0000") {
-    lcd.clear();
+  lcd.clear();
+  do {
     lcd.setCursor(0, 0);
-    lcd.print("REGISTRO");
-    delay(1000);
+    lcd.print("ID GERENTE");
+    lcd.setCursor(0, 1);
+    lcd.print(user);
+    key = keypad.getKey();
 
-    registrarUsuario();
-  } else {
-    iniciarSesion(pass);
+    if (key && key != '#') {
+      user += key;
+    }
+
+    if (user.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      user = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  Usuario temp;
+  EEPROM.get(sizeof(registro), temp); long randomNumber;
+  String USR = temp.identificacion;
+  String PWD = temp.contrasenia;
+
+  if (USR.equals(user) && PWD.equals(pass)) {
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("SISTEMA");
+    lcd.setCursor(2, 1);
+    lcd.print("DESBLOQUEADO");
+
+    contadorIntentos = 0;
   }
+  delay(2000);
 }
 
 void iniciarSesion(String pass) {
-  lcd.clear();
   String user = "";
   char key;
 
+  lcd.clear();
   do {
     lcd.setCursor(0, 0);
     lcd.print("DIGITE SU ID");
@@ -306,10 +375,10 @@ void iniciarSesion(String pass) {
       user += key;
     }
 
-    if (user.length() > 10) {
+    if (user.length() > 8) {
       lcd.clear();
       lcd.setCursor(0, 0);
-      lcd.print("MAX 10 CARACTERES");
+      lcd.print("MAX 8 CARACTERES");
       delay(2000);
       user = "";
       lcd.clear();
@@ -318,26 +387,183 @@ void iniciarSesion(String pass) {
 
   if (buscarEEPROM(user, pass)) {
     logueado = true;
-    lcd.clear();
-    lcd.setCursor(0, 0);
     digitalWrite(IO52LOG, HIGH);
-    lcd.print("OK ACCESO");
-    lcd.setCursor(0, 1);
+    lcd.clear();
+    lcd.setCursor(5, 0);
+    lcd.print("ACCESO");
+    lcd.setCursor(4, 1);
     lcd.print("PERMITIDO");
-    digitalWrite(LL1, HIGH);
-    digitalWrite(LL2, HIGH);
-    digitalWrite(LE, HIGH);
-    digitalWrite(LS, HIGH);
+    contadorIntentos = 0;
+  } else {
+    contadorIntentos++;
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("ERROR  ");
+    lcd.setCursor(11, 0);
+    lcd.print(contadorIntentos);
+    lcd.setCursor(0, 1);
+    lcd.print("CLAVE INCORRECTA");
+    delay(2000);
   }
 }
 
 void registrarUsuario() {
+  String pass = "";
+  String confPass = "";
+  char key;
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("REGISTRO");
+    lcd.setCursor(0, 1);
+    lcd.print("CLAVE: ");
+    lcd.setCursor(7, 1);
+    lcd.print(pass);
+
+    key = keypad.getKey();
+    if (key && key != '#') {
+      pass += key;
+    }
+
+    if (pass.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      pass = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("CONFIRMAR");
+    lcd.setCursor(0, 1);
+    lcd.print("CLAVE: ");
+    lcd.setCursor(7, 1);
+    lcd.print(confPass);
+
+    key = keypad.getKey();
+    if (key && key != '#') {
+      confPass += key;
+    }
+
+    if (confPass.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      confPass = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  if (pass.equals(confPass)) {
+    confirmarRegistro(pass);
+  } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("LAS  CONTRASENAS");
+    lcd.setCursor(2, 1);
+    lcd.print("NO COINCIDEN");
+    delay(2000);
+    confPass = "";
+    pass = "";
+    lcd.clear();
+  }
+}
+
+void confirmarRegistro(String usrPass) {
+  String pass = "";
+  String user = "";
+  char key;
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("CLAVE GERENTE");
+    lcd.setCursor(0, 1);
+    lcd.print(pass);
+
+    key = keypad.getKey();
+    if (key && key != '#') {
+      pass += key;
+    }
+
+    if (pass.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      pass = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("ID GERENTE");
+    lcd.setCursor(0, 1);
+    lcd.print(user);
+    key = keypad.getKey();
+
+    if (key && key != '#') {
+      user += key;
+    }
+
+    if (user.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      user = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  Usuario temp;
+  EEPROM.get(sizeof(registro), temp);
+  String USR = temp.identificacion;
+  String PWD = temp.contrasenia;
+
+  if (USR.equals(user) && PWD.equals(pass)) {
+    logueado = true;
+    digitalWrite(IO52LOG, HIGH);
+
+    randomNumber = random(10000000, 99999999);
+    String id = String(randomNumber);
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("ACCESO PERMITIDO");
+    lcd.setCursor(0, 1);
+    lcd.print("ID: ");
+    lcd.setCursor(3, 1);
+    lcd.print(id);
+
+    registrarEEPROM(id, usrPass);
+    contadorIntentos = 0;
+  } else {
+    contadorIntentos++;
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("ERROR  ");
+    lcd.setCursor(11, 0);
+    lcd.print(contadorIntentos);
+    lcd.setCursor(0, 1);
+    lcd.print("USUARIO  GERENTE");
+  }
+
+  delay(2000);
 }
 
 void controlPorton() {
-    delay(10);
-    char c = Serial.read();
-    texto += c;
+  delay(10);
+  char c = Serial.read();
+  texto += c;
   if (texto == "1") {
     posicion = 1;
   } else {

@@ -92,15 +92,17 @@ byte caritaCalavera[8] = {
 // END EMOJIS ----------
 
 // LOGIN ----------------
-boolean loggeado = false;
+int IO52LOG = 52;
+boolean logueado = false;
 int contadorIntentos = 0;
-String pass = "";
+int registro = 0;
+long randomNumber;
 // END LOGIN ------------
 
 // Usuario
 struct Usuario {
-  String identificacion;
-  String contrasenia;
+  char identificacion[10];
+  char contrasenia[8];
 };
 
 void setup() {
@@ -134,77 +136,417 @@ void setup() {
   pinMode(IO3, OUTPUT);
   pinMode(IO4, OUTPUT);
 
+  // LOGIN
+  pinMode(IO52LOG, OUTPUT);
   // crearAdministrador();
-  int eeAddress = sizeof(Usuario);
-  Usuario customVar2;
-  EEPROM.get(eeAddress, customVar2);
-  Serial.println( "Estructura leida: " );
-  Serial.println( customVar2.identificacion );
-  Serial.println( customVar2.contrasenia );
+  EEPROM.get(0, registro);
+  randomSeed(registro);
+  // Serial.println(buscarEEPROM("201800491", "0611"));
 
   mensajePrincipal();
 }
 
 void loop() {
-  /*
-    if (!loggeado) {
+  if (!logueado) {
     login();
-    } else {
+  } else {
     controlPorton();
     barraTransportadora();
+  }
+}
+
+void limpiarEEPROM() {
+  EEPROM.get(0, registro);
+  for (int i = 0; i < registro; i++) {
+    EEPROM.write(i, 0);
+    delay(50);
+  }
+  Serial.println(">> MEMORIA LIMPIA");
+}
+
+bool buscarEEPROM(String usr, String pwd) {
+  EEPROM.get(0, registro);
+  Usuario temp;
+  String rUSR;
+  String rPWD;
+
+  for (int i = sizeof(registro); i < registro; i += sizeof(Usuario)) {
+    EEPROM.get(i, temp);
+    rUSR = temp.identificacion;
+    rPWD = temp.contrasenia;
+    Serial.println("-----------------");
+    Serial.println(rUSR);
+    Serial.println(rPWD);
+    Serial.println("-----------------");
+    if (rUSR.equals(usr) && rPWD.equals(pwd)) {
+      return true;
     }
-  */
+    delay(100);
+  }
+
+  return false;
 }
 
 void crearAdministrador() {
   limpiarEEPROM();
 
-  int eeAddress = 0;
+  registro = 0;
   Usuario administrador = {
     "20180",
     "0106"
   };
-  eeAddress += sizeof(Usuario);
-  EEPROM.put(eeAddress, administrador);
+
+  registro += sizeof(registro);
+  EEPROM.put(registro, administrador);
+  delay(50);
+
+  registro += sizeof(Usuario);
+  EEPROM.update(0, registro);
+  delay(50);
+
+  Serial.println(">> ADMINISTRADOR AGREGADO");
 }
 
-void limpiarEEPROM() {
-  for (int i = 0 ; i < EEPROM.length() ; i++) {
-    EEPROM.write(i, 0);
+void registrarEEPROM(String user, String password) {
+  Usuario nuevoUsuario;
+
+  for (int i = 0; i < user.length(); i++) {
+    nuevoUsuario.identificacion[i] = user.charAt(i);
+    delay(75);
   }
+  for (int i = 0; i < password.length(); i++) {
+    nuevoUsuario.contrasenia[i] = password.charAt(i);
+    delay(75);
+  }
+
+  EEPROM.get(0, registro);
+  EEPROM.put(registro, nuevoUsuario);
+  delay(75);
+
+  registro += sizeof(Usuario);
+  EEPROM.update(0, registro);
+  delay(75);
 }
 
 void mensajePrincipal() {
+  lcd.clear();
   lcd.home();
   lcd.setCursor(1, 0);
   lcd.write(byte(0));
   lcd.print(" BIENVENIDO ");
   lcd.write(byte(0));
   delay(5000);
-  lcd.clear();
 }
 
 void login() {
-  lcd.setCursor(0, 0);
-  lcd.print("DIGITE SU CLAVE");
+  lcd.clear();
 
-  if (pass.length() <= 8) {
-    lcd.setCursor(0, 1);
-    lcd.print(pass);
+  if (contadorIntentos < 4) {
+    String pass = "";
+    char key;
 
-    char key = keypad.getKey();
-    if (key) {
-      pass += key;
+    do {
+      lcd.setCursor(0, 0);
+      lcd.print("DIGITE SU CLAVE");
+      lcd.setCursor(0, 1);
+      lcd.print(pass);
+
+      key = keypad.getKey();
+      if (key && key != '#') {
+        pass += key;
+      }
+
+      if (pass.length() > 8) {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("MAX 8 CARACTERES");
+        delay(2000);
+        pass = "";
+        lcd.clear();
+      }
+    } while (key != '#');
+
+    if (pass == "0000") {
+      registrarUsuario();
+    } else {
+      iniciarSesion(pass);
     }
   } else {
-    lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("MAX 8 CARACTERES");
+    lcd.print("SIST.  BLOQUEADO");
+    lcd.setCursor(0, 1);
+    lcd.print("AVISE AL GERENTE");
     delay(2000);
-    pass = "";
+    avisoGerente();
   }
 }
 
+void avisoGerente() {
+  String pass = "";
+  String user = "";
+  char key;
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("CLAVE GERENTE");
+    lcd.setCursor(0, 1);
+    lcd.print(pass);
+
+    key = keypad.getKey();
+    if (key && key != '#') {
+      pass += key;
+    }
+
+    if (pass.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      pass = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("ID GERENTE");
+    lcd.setCursor(0, 1);
+    lcd.print(user);
+    key = keypad.getKey();
+
+    if (key && key != '#') {
+      user += key;
+    }
+
+    if (user.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      user = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  Usuario temp;
+  EEPROM.get(sizeof(registro), temp); long randomNumber;
+  String USR = temp.identificacion;
+  String PWD = temp.contrasenia;
+
+  if (USR.equals(user) && PWD.equals(pass)) {
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("SISTEMA");
+    lcd.setCursor(2, 1);
+    lcd.print("DESBLOQUEADO");
+
+    contadorIntentos = 0;
+  }
+  delay(2000);
+}
+
+void iniciarSesion(String pass) {
+  String user = "";
+  char key;
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("DIGITE SU ID");
+    lcd.setCursor(0, 1);
+    lcd.print(user);
+    key = keypad.getKey();
+
+    if (key && key != '#') {
+      user += key;
+    }
+
+    if (user.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      user = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  if (buscarEEPROM(user, pass)) {
+    logueado = true;
+    digitalWrite(IO52LOG, HIGH);
+    lcd.clear();
+    lcd.setCursor(5, 0);
+    lcd.print("ACCESO");
+    lcd.setCursor(4, 1);
+    lcd.print("PERMITIDO");
+    contadorIntentos = 0;
+  } else {
+    contadorIntentos++;
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("ERROR  ");
+    lcd.setCursor(11, 0);
+    lcd.print(contadorIntentos);
+    lcd.setCursor(0, 1);
+    lcd.print("CLAVE INCORRECTA");
+    delay(2000);
+  }
+}
+
+void registrarUsuario() {
+  String pass = "";
+  String confPass = "";
+  char key;
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("REGISTRO");
+    lcd.setCursor(0, 1);
+    lcd.print("CLAVE: ");
+    lcd.setCursor(7, 1);
+    lcd.print(pass);
+
+    key = keypad.getKey();
+    if (key && key != '#') {
+      pass += key;
+    }
+
+    if (pass.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      pass = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("CONFIRMAR");
+    lcd.setCursor(0, 1);
+    lcd.print("CLAVE: ");
+    lcd.setCursor(7, 1);
+    lcd.print(confPass);
+
+    key = keypad.getKey();
+    if (key && key != '#') {
+      confPass += key;
+    }
+
+    if (confPass.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      confPass = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  if (pass.equals(confPass)) {
+    confirmarRegistro(pass);
+  } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("LAS  CONTRASENAS");
+    lcd.setCursor(2, 1);
+    lcd.print("NO COINCIDEN");
+    delay(2000);
+    confPass = "";
+    pass = "";
+    lcd.clear();
+  }
+}
+
+void confirmarRegistro(String usrPass) {
+  String pass = "";
+  String user = "";
+  char key;
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("CLAVE GERENTE");
+    lcd.setCursor(0, 1);
+    lcd.print(pass);
+
+    key = keypad.getKey();
+    if (key && key != '#') {
+      pass += key;
+    }
+
+    if (pass.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      pass = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  lcd.clear();
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("ID GERENTE");
+    lcd.setCursor(0, 1);
+    lcd.print(user);
+    key = keypad.getKey();
+
+    if (key && key != '#') {
+      user += key;
+    }
+
+    if (user.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      user = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  Usuario temp;
+  EEPROM.get(sizeof(registro), temp);
+  String USR = temp.identificacion;
+  String PWD = temp.contrasenia;
+
+  if (USR.equals(user) && PWD.equals(pass)) {
+    logueado = true;
+    digitalWrite(IO52LOG, HIGH);
+
+    randomNumber = random(10000000, 99999999);
+    String id = String(randomNumber);
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("ACCESO PERMITIDO");
+    lcd.setCursor(0, 1);
+    lcd.print("ID: ");
+    lcd.setCursor(3, 1);
+    lcd.print(id);
+
+    registrarEEPROM(id, usrPass);
+    contadorIntentos = 0;
+  } else {
+    contadorIntentos++;
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("ERROR  ");
+    lcd.setCursor(11, 0);
+    lcd.print(contadorIntentos);
+    lcd.setCursor(0, 1);
+    lcd.print("USUARIO  GERENTE");
+  }
+
+  delay(2000);
+}
 
 void controlPorton() {
   posicion = digitalRead(WIFI);
@@ -271,7 +613,6 @@ void barraTransportadora() {
   if (Lab2) {
     haciaLab1();
   }
-
 }
 
 void haciaLab1() { // HACIA LA DERECHA SENTIDO HORARIO
@@ -280,13 +621,16 @@ void haciaLab1() { // HACIA LA DERECHA SENTIDO HORARIO
   Cpasos = -1;
 
   if (digitalRead(LAB2) == HIGH) {
+    //buzzerLAB();
     while (digitalRead(LAB1) == LOW) {
       secuenciaUnPaso();
-
+      mensajeLab("Corriendo hacia", "la Derecha");
     }
+    mensajeLab("La muestra llego", "al LAB 1");
     Serial.println("Llego el paquete al Laboratorio 1");
     Lab2 = false;
   } else {
+    mensajeLab("Poner Muestra", "en la banda LAB2");
     Serial.println("No se ha cargado ningun paquete en el Laboratorio 2");
   }
 }
@@ -296,12 +640,16 @@ void haciaLab2() { // HACIA LA IZQUIERDA SENTIDO ANTIHORARIO
   horario = 0;
   Cpasos = paso;
   if (digitalRead(LAB1) == HIGH) {
+    //buzzerLAB();
     while (digitalRead(LAB2) == LOW) {
       secuenciaUnPaso();
+      mensajeLab("Corriendo hacia", "la Izquierda");
     }
+    mensajeLab("La muestra llego", "al LAB 2");
     Serial.println("Llego el paquete al Laboratorio 2");
     Lab1 = false;
   } else {
+    mensajeLab("Poner Muestra", "en la banda LAB1");
     Serial.println("No se ha cargado ningun paquete en Laboratorio 1");
   }
 }
@@ -328,4 +676,14 @@ void puerto(int bits, int inicio, int fin) {
   for (int i = inicio; i <= fin; i++) {
     digitalWrite(i, bitRead(bits, i - inicio));
   }
+}
+
+void mensajeLab(String mensaje1, String mensaje2) {
+  lcd.home();
+  lcd.setCursor(0, 0);
+  lcd.print(mensaje1);
+  lcd.setCursor(0, 1);
+  lcd.print(mensaje2);
+  delay(1500);
+  lcd.clear();
 }
