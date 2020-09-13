@@ -70,6 +70,15 @@ byte candado[8] = {
   B11111,
   B11111
 };
+byte candadoAbierto[8] = {
+  B00111,
+  B00001,
+  B00001,
+  B11111,
+  B11111,
+  B11111,
+  B11111
+};
 byte smiley[8] = {
   B00000,
   B10001,
@@ -88,6 +97,26 @@ byte caritaCalavera[8] = {
   B10001,
   B11111,
   B11111
+};
+byte checkE[8] = {
+  B00000,
+  B00001,
+  B00011,
+  B10110,
+  B11100,
+  B01000,
+  B00000,
+  B00000
+};
+byte ampersand[8] = {
+  B01100,
+  B10010,
+  B10010,
+  B10100,
+  B01000,
+  B10101,
+  B10010,
+  B01101
 };
 // END EMOJIS ----------
 
@@ -115,8 +144,11 @@ void setup() {
 
   // Declaracion de emojis
   lcd.createChar(0, candado);
-  lcd.createChar(1, smiley);
-  lcd.createChar(2, caritaCalavera);
+  lcd.createChar(1, candadoAbierto);
+  lcd.createChar(2, smiley);
+  lcd.createChar(3, caritaCalavera);
+  lcd.createChar(4, checkE);
+  lcd.createChar(5, ampersand);
 
   //Servo
   pinMode(PORTON, OUTPUT);
@@ -230,7 +262,6 @@ void registrarEEPROM(String user, String password) {
 
 void mensajePrincipal() {
   lcd.clear();
-  lcd.home();
   lcd.setCursor(1, 0);
   lcd.write(byte(0));
   lcd.print(" BIENVENIDO ");
@@ -559,6 +590,7 @@ void controlPorton() {
 
     Serial.println(">> LED ROJA");
     digitalWrite(portonAbierto, HIGH);
+
     for (int i = 0; i <= 6000; i++) {
       posicion = digitalRead(WIFI);
       if (posicion != 1) {
@@ -574,6 +606,19 @@ void controlPorton() {
 }
 
 void abrirPorton() {            // 2 vueltas derecha
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.write(byte(4));
+  lcd.write(byte(5));
+  lcd.print("CONTROLPORTON");
+  lcd.write(byte(5));
+
+  lcd.setCursor(2, 1);
+  lcd.write(byte(1));
+  lcd.write(byte(2));
+  lcd.print("ABRIENDO");
+  lcd.write(byte(2));
+
   motor.attach(PORTON);
   for (int i = 0; i <= 180; i++) {
     motor.write(i);
@@ -582,6 +627,19 @@ void abrirPorton() {            // 2 vueltas derecha
 }
 
 void cerrarPorton() {     // 2 vueltas izquierda
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.write(byte(4));
+  lcd.write(byte(5));
+  lcd.print("CONTROLPORTON");
+  lcd.write(byte(5));
+
+  lcd.setCursor(2, 1);
+  lcd.write(byte(0));
+  lcd.write(byte(2));
+  lcd.print("CERRANDO");
+  lcd.write(byte(2));
+
   motor.attach(PORTON);
   for (int i = 180; i >= 0; i--) {
     motor.write(i);
