@@ -92,9 +92,9 @@ byte caritaCalavera[8] = {
 // END EMOJIS ----------
 
 // LOGIN ----------------
-boolean loggeado = false;
+int IO52LOG = 52;
+boolean logueado = false;
 int contadorIntentos = 0;
-String pass = "";
 int registro = 0;
 // END LOGIN ------------
 
@@ -135,22 +135,22 @@ void setup() {
   pinMode(IO3, OUTPUT);
   pinMode(IO4, OUTPUT);
 
+  // LOGIN
+  pinMode(IO52LOG, OUTPUT);
   // crearAdministrador();
-  registrarUsuario("3576678", "46845");
-  buscarEEPROM("123", "1232");
-  // mensajePrincipal();
+  // registrarEEPROM("3576678", "46845");
+  // Serial.println(buscarEEPROM("201800491", "0611"));
+
+  mensajePrincipal();
 }
 
 void loop() {
-  /*
-    if (!loggeado) {
-    //login();
-    } else {
-
+  if (!logueado) {
+    login();
+  } else {
     controlPorton();
     barraTransportadora();
-    }
-  */
+  }
 }
 
 void limpiarEEPROM() {
@@ -206,7 +206,7 @@ void crearAdministrador() {
   Serial.println(">> ADMINISTRADOR AGREGADO");
 }
 
-void registrarUsuario(String user, String password) {
+void registrarEEPROM(String user, String password) {
   Usuario nuevoUsuario;
 
   for (int i = 0; i < user.length(); i++) {
@@ -228,36 +228,94 @@ void registrarUsuario(String user, String password) {
 }
 
 void mensajePrincipal() {
+  lcd.clear();
   lcd.home();
   lcd.setCursor(1, 0);
   lcd.write(byte(0));
   lcd.print(" BIENVENIDO ");
   lcd.write(byte(0));
   delay(5000);
-  lcd.clear();
 }
 
 void login() {
-  lcd.setCursor(0, 0);
-  lcd.print("DIGITE SU CLAVE");
+  lcd.clear();
+  String pass = "";
+  char key;
 
-  if (pass.length() <= 8) {
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("DIGITE SU CLAVE");
     lcd.setCursor(0, 1);
     lcd.print(pass);
 
-    char key = keypad.getKey();
-    if (key) {
+    key = keypad.getKey();
+    if (key && key != '#') {
       pass += key;
     }
-  } else {
+
+    if (pass.length() > 8) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 8 CARACTERES");
+      delay(2000);
+      pass = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  Serial.println(pass);
+
+  if (pass == "0000") {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("MAX 8 CARACTERES");
-    delay(2000);
-    pass = "";
+    lcd.print("REGISTRO");
+    delay(1000);
+
+    registrarUsuario();
+  } else {
+    iniciarSesion(pass);
   }
 }
 
+void iniciarSesion(String pass) {
+  lcd.clear();
+  String user = "";
+  char key;
+
+  do {
+    lcd.setCursor(0, 0);
+    lcd.print("DIGITE SU ID");
+    lcd.setCursor(0, 1);
+    lcd.print(user);
+    key = keypad.getKey();
+
+    if (key && key != '#') {
+      user += key;
+    }
+
+    if (user.length() > 10) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MAX 10 CARACTERES");
+      delay(2000);
+      user = "";
+      lcd.clear();
+    }
+  } while (key != '#');
+
+  if (buscarEEPROM(user, pass)) {
+    logueado = true;
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    digitalWrite(IO52LOG, HIGH);
+    lcd.print("OK ACCESO");
+    lcd.setCursor(0, 1);
+    lcd.print("PERMITIDO");
+  }
+}
+
+void registrarUsuario() {
+}
 
 void controlPorton() {
   posicion = digitalRead(WIFI);
