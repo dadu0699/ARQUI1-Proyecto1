@@ -95,10 +95,11 @@ byte caritaCalavera[8] = {
 boolean loggeado = false;
 int contadorIntentos = 0;
 String pass = "";
+int registro = 0;
 // END LOGIN ------------
 
 // Usuario
-typedef struct Usuario {
+struct Usuario {
   char identificacion[10];
   char contrasenia[8];
 };
@@ -135,13 +136,8 @@ void setup() {
   pinMode(IO4, OUTPUT);
 
   // crearAdministrador();
-  int eeAddress = sizeof(Usuario);
-  Usuario customVar2;
-  EEPROM.get(eeAddress, customVar2);
-  Serial.println( "Estructura leida: " );
-  Serial.println( customVar2.identificacion );
-  Serial.println( customVar2.contrasenia );
-
+  registrarUsuario("3576678", "46845");
+  buscarEEPROM("123", "1232");
   // mensajePrincipal();
 }
 
@@ -150,28 +146,85 @@ void loop() {
     if (!loggeado) {
     //login();
     } else {
+
     controlPorton();
     barraTransportadora();
     }
   */
 }
 
+void limpiarEEPROM() {
+  EEPROM.get(0, registro);
+  for (int i = 0; i < registro; i++) {
+    EEPROM.write(i, 0);
+    delay(50);
+  }
+  Serial.println(">> MEMORIA LIMPIA");
+}
+
+bool buscarEEPROM(String usr, String pwd) {
+  EEPROM.get(0, registro);
+  Usuario temp;
+  String rUSR;
+  String rPWD;
+
+  for (int i = sizeof(registro); i < registro; i += sizeof(Usuario)) {
+    EEPROM.get(i, temp);
+    rUSR = temp.identificacion;
+    rPWD = temp.contrasenia;
+
+    Serial.println("Estructura leida: ");
+    Serial.println(temp.identificacion);
+    Serial.println(temp.contrasenia);
+
+    if (rUSR.equals(usr) && rPWD.equals(pwd)) {
+      return true;
+    }
+    delay(50);
+  }
+
+  return false;
+}
+
 void crearAdministrador() {
   limpiarEEPROM();
 
-  int eeAddress = 0;
+  registro = 0;
   Usuario administrador = {
-    {'2', '0', '1', '8', '0'},
-    {'0', '1', '0', '6'}
+    "20180",
+    "0106"
   };
-  eeAddress += sizeof(Usuario);
-  EEPROM.put(eeAddress, administrador);
+
+  registro += sizeof(registro);
+  EEPROM.put(registro, administrador);
+  delay(50);
+
+  registro += sizeof(Usuario);
+  EEPROM.update(0, registro);
+  delay(50);
+
+  Serial.println(">> ADMINISTRADOR AGREGADO");
 }
 
-void limpiarEEPROM() {
-  for (int i = 0; i < EEPROM.length(); i++) {
-    EEPROM.write(i, 0);
+void registrarUsuario(String user, String password) {
+  Usuario nuevoUsuario;
+
+  for (int i = 0; i < user.length(); i++) {
+    nuevoUsuario.identificacion[i] = user.charAt(i);
+    delay(50);
   }
+  for (int i = 0; i < password.length(); i++) {
+    nuevoUsuario.contrasenia[i] = password.charAt(i);
+    delay(50);
+  }
+
+  EEPROM.get(0, registro);
+  EEPROM.put(registro, nuevoUsuario);
+  delay(50);
+
+  registro += sizeof(Usuario);
+  EEPROM.update(0, registro);
+  delay(50);
 }
 
 void mensajePrincipal() {
