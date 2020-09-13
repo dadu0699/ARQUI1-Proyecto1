@@ -388,12 +388,15 @@ void iniciarSesion(String pass) {
   if (buscarEEPROM(user, pass)) {
     logueado = true;
     digitalWrite(IO52LOG, HIGH);
+    
     lcd.clear();
     lcd.setCursor(5, 0);
     lcd.print("ACCESO");
     lcd.setCursor(4, 1);
     lcd.print("PERMITIDO");
+    
     contadorIntentos = 0;
+    luces();
   } else {
     contadorIntentos++;
     lcd.clear();
@@ -403,8 +406,9 @@ void iniciarSesion(String pass) {
     lcd.print(contadorIntentos);
     lcd.setCursor(0, 1);
     lcd.print("CLAVE INCORRECTA");
-    delay(2000);
   }
+  
+  delay(2000);
 }
 
 void registrarUsuario() {
@@ -546,6 +550,8 @@ void confirmarRegistro(String usrPass) {
 
     registrarEEPROM(id, usrPass);
     contadorIntentos = 0;
+
+    luces();
   } else {
     contadorIntentos++;
     lcd.clear();
@@ -556,9 +562,20 @@ void confirmarRegistro(String usrPass) {
     lcd.setCursor(0, 1);
     lcd.print("USUARIO  GERENTE");
   }
-
   delay(2000);
 }
+
+void luces() {
+  delay(2000);
+
+  digitalWrite(IO52LOG, LOW);
+  digitalWrite(LL1, HIGH);
+  digitalWrite(LL2, HIGH);
+  digitalWrite(LE, HIGH);
+  digitalWrite(LS, HIGH);
+  lcd.clear();
+}
+
 
 void controlPorton() {
   delay(10);
