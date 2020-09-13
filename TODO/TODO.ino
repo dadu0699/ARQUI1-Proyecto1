@@ -33,6 +33,12 @@ int buzzerP = 22; //buzzer de cerrado
 int WIFI = 53; //Señal de la app
 // END SERVO MOTOR -------------------
 
+/* PINES PARA LAS LUCES */
+int LL1 = 26;
+int LL2 = 27;
+int LE = 28;
+int LS = 29;
+String texto = "";
 
 /* PINES PARA LA BARRA TRANSPORTADORA */
 int IO1 = 10;
@@ -117,6 +123,12 @@ void setup() {
   lcd.createChar(1, smiley);
   lcd.createChar(2, caritaCalavera);
 
+  //LUCES
+  pinMode(LL1, OUTPUT);
+  pinMode(LL2, OUTPUT);
+  pinMode(LE, OUTPUT);
+  pinMode(LS, OUTPUT);
+
   //Servo
   pinMode(PORTON, OUTPUT);
   pinMode(portonAbierto, OUTPUT);
@@ -148,6 +160,7 @@ void loop() {
   if (!logueado) {
     login();
   } else {
+    controlarLuces();
     controlPorton();
     barraTransportadora();
   }
@@ -311,6 +324,10 @@ void iniciarSesion(String pass) {
     lcd.print("OK ACCESO");
     lcd.setCursor(0, 1);
     lcd.print("PERMITIDO");
+    digitalWrite(LL1, HIGH);
+    digitalWrite(LL2, HIGH);
+    digitalWrite(LE, HIGH);
+    digitalWrite(LS, HIGH);
   }
 }
 
@@ -318,18 +335,28 @@ void registrarUsuario() {
 }
 
 void controlPorton() {
-  posicion = digitalRead(WIFI);
-  // posicion = 1;
-
+    delay(10);
+    char c = Serial.read();
+    texto += c;
+  if (texto == "1") {
+    posicion = 1;
+  } else {
+    posicion = 0;
+  }
   if (posicion == 1) { //encender led por 6 seg al terminar se cierra el porton
-    Serial.println(">> HIGH");
-
     abrirPorton();
-
-    Serial.println(">> LED ROJA");
     digitalWrite(portonAbierto, HIGH);
     for (int i = 0; i <= 6000; i++) {
-      posicion = digitalRead(WIFI);
+      while (Serial.available()) {
+        delay(10);
+        char c = Serial.read();
+        texto += c;
+      }
+      if (texto == "1") {
+        posicion = 1;
+      } else {
+        posicion = 0;
+      }
       if (posicion != 1) {
         break;
       }
@@ -455,4 +482,52 @@ void mensajeLab(String mensaje1, String mensaje2) {
   lcd.print(mensaje2);
   delay(1500);
   lcd.clear();
+}
+
+void controlarLuces() {
+  while (Serial.available()) {
+    delay(10);
+    char c = Serial.read();
+    texto += c;
+  }
+  if (texto.length() > 0) {
+    Serial.println(texto);
+    if (texto == "gon") {
+      digitalWrite(LL1, HIGH);
+      digitalWrite(LL2, HIGH);
+      digitalWrite(LE, HIGH);
+      digitalWrite(LS, HIGH);
+    }
+    if (texto == "goff") {
+      digitalWrite(LL1, LOW);
+      digitalWrite(LL2, LOW);
+      digitalWrite(LE, LOW);
+      digitalWrite(LS, LOW);
+    }
+    if (texto == "eon") {
+      digitalWrite(LE, HIGH);
+    }
+    if (texto == "eoff") {
+      digitalWrite(LE, LOW);
+    }
+    if (texto == "l1on") {
+      digitalWrite(LL1, HIGH);
+    }
+    if (texto == "l1off") {
+      digitalWrite(LL1, LOW);
+    }
+    if (texto == "l2on") {
+      digitalWrite(LL2, HIGH);
+    }
+    if (texto == "l2off") {
+      digitalWrite(LL2, LOW);
+    }
+    if (texto == "son") {
+      digitalWrite(LS, HIGH);
+    }
+    if (texto == "soff") {
+      digitalWrite(LS, LOW);
+    }
+    texto = "";
+  }
 }
