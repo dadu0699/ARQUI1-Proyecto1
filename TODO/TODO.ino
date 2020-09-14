@@ -719,17 +719,23 @@ void haciaLab1() { // HACIA LA DERECHA SENTIDO HORARIO
   Cpasos = -1;
 
   if (digitalRead(LAB2) == HIGH) {
-    //buzzerLAB();
+    tone(buzzerP, 700); // digitalWrite(buzzerP, HIGH);
+    delay(3000);
+    noTone(buzzerP); // digitalWrite(buzzerP, LOW);
+    
     while (digitalRead(LAB1) == LOW) {
       secuenciaUnPaso();
       mensajeLab("Corriendo hacia", "la Derecha");
     }
     mensajeLab("La muestra llego", "al LAB 1");
-    Serial.println("Llego el paquete al Laboratorio 1");
+    
+    tone(buzzerP, 800); // digitalWrite(buzzerP, HIGH);
+    delay(1000);
+    noTone(buzzerP); // digitalWrite(buzzerP, LOW);
+    
     Lab2 = false;
   } else {
     mensajeLab("Poner Muestra", "en la banda LAB2");
-    Serial.println("No se ha cargado ningun paquete en el Laboratorio 2");
   }
 }
 
@@ -738,17 +744,23 @@ void haciaLab2() { // HACIA LA IZQUIERDA SENTIDO ANTIHORARIO
   horario = 0;
   Cpasos = paso;
   if (digitalRead(LAB1) == HIGH) {
-    //buzzerLAB();
+    tone(buzzerP, 700); // digitalWrite(buzzerP, HIGH);
+    delay(3000);
+    noTone(buzzerP); // digitalWrite(buzzerP, LOW);
+    
     while (digitalRead(LAB2) == LOW) {
       secuenciaUnPaso();
       mensajeLab("Corriendo hacia", "la Izquierda");
     }
     mensajeLab("La muestra llego", "al LAB 2");
-    Serial.println("Llego el paquete al Laboratorio 2");
+    
+    tone(buzzerP, 900); // digitalWrite(buzzerP, HIGH);
+    delay(1000);
+    noTone(buzzerP); // digitalWrite(buzzerP, LOW);
+    
     Lab1 = false;
   } else {
     mensajeLab("Poner Muestra", "en la banda LAB1");
-    Serial.println("No se ha cargado ningun paquete en Laboratorio 1");
   }
 }
 
