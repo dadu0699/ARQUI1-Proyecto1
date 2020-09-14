@@ -1,9 +1,19 @@
+#include <DHT.h>
+#include <DHT_U.h>
 #include <Keypad.h>
 #include <Wire.h>
 #include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 #include <EEPROM.h>
 #include <Servo.h>
+
+#define DHTPIN 48//Pin 
+#define DHTTYPE DHT22//Sensor
+DHT dht(DHTPIN, DHTTYPE);
+
+float temperatura;//Var para almacenar la lectura
+
+
 
 // LiquidCrystal ------------------------
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7); // DIR, E, RW, RS, D4, D5, D6, D7
@@ -190,6 +200,14 @@ void setup() {
 }
 
 void loop() {
+
+  temperatura = dht.readTemperature();
+  Serial.print(temperatura);
+  Serial.print(" C");
+  Serial.print("|");
+  Serial.print("ALGO");
+  delay(2000);
+  
   if (!logueado) {
     login();
   } else {
