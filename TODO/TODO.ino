@@ -166,7 +166,7 @@ void setup() {
   pinMode(PORTON, OUTPUT);
   pinMode(portonAbierto, OUTPUT);
   pinMode(portonCerrado, OUTPUT);
-  pinMode(buzzerP, OUTPUT);
+  // pinMode(buzzerP, OUTPUT);
   pinMode(WIFI, INPUT);
 
   // Barra T
@@ -312,11 +312,13 @@ void login() {
       iniciarSesion(pass);
     }
   } else {
+    tone(buzzerP, 600); // digitalWrite(buzzerP, HIGH);
     lcd.setCursor(0, 0);
     lcd.print("SIST.  BLOQUEADO");
     lcd.setCursor(0, 1);
     lcd.print("AVISE AL GERENTE");
-    delay(2000);
+    delay(5000);
+    noTone(buzzerP); // digitalWrite(buzzerP, LOW);
     avisoGerente();
   }
 }
@@ -594,8 +596,10 @@ void confirmarRegistro(String usrPass) {
 }
 
 void luces() {
+  tone(buzzerP, 400); // digitalWrite(buzzerP, HIGH);
   delay(2000);
 
+  noTone(buzzerP); // digitalWrite(buzzerP, LOW);
   digitalWrite(IO52LOG, LOW);
   digitalWrite(LL1, HIGH);
   digitalWrite(LL2, HIGH);
@@ -683,10 +687,10 @@ void cerrarPorton() {     // 2 vueltas izquierda
   }
 
   Serial.println(">> LED AMARILLA");
-  digitalWrite(buzzerP, HIGH);
+  tone(buzzerP, 500); // digitalWrite(buzzerP, HIGH);
   digitalWrite(portonCerrado, HIGH);
   delay(3000);
-  digitalWrite(buzzerP, LOW);
+  noTone(buzzerP); // digitalWrite(buzzerP, LOW);
   digitalWrite(portonCerrado, LOW);
 }
 

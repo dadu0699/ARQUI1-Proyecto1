@@ -154,7 +154,7 @@ void setup() {
   pinMode(PORTON, OUTPUT);
   pinMode(portonAbierto, OUTPUT);
   pinMode(portonCerrado, OUTPUT);
-  pinMode(buzzerP, OUTPUT);
+  // pinMode(buzzerP, OUTPUT);
   pinMode(WIFI, INPUT);
 
   // Barra T
@@ -647,10 +647,10 @@ void cerrarPorton() {     // 2 vueltas izquierda
   }
 
   Serial.println(">> LED AMARILLA");
-  digitalWrite(buzzerP, HIGH);
+  tone(buzzerP, 500); // digitalWrite(buzzerP, HIGH);
   digitalWrite(portonCerrado, HIGH);
   delay(3000);
-  digitalWrite(buzzerP, LOW);
+  noTone(buzzerP); // digitalWrite(buzzerP, LOW);
   digitalWrite(portonCerrado, LOW);
 }
 
