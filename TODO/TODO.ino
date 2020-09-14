@@ -613,7 +613,7 @@ void controlPorton() {
   delay(10);
   char c = Serial.read();
   texto += c;
-  if (texto == "1") {
+  if (texto == "3") {
     posicion = 1;
   } else {
     posicion = 0;
@@ -628,7 +628,7 @@ void controlPorton() {
         char c = Serial.read();
         texto += c;
       }
-      if (texto == "1") {
+      if (texto == "3") {
         posicion = 1;
       } else {
         posicion = 0;
