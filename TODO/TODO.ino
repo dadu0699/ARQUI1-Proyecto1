@@ -1,19 +1,9 @@
-#include <DHT.h>
-#include <DHT_U.h>
 #include <Keypad.h>
 #include <Wire.h>
 #include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 #include <EEPROM.h>
 #include <Servo.h>
-
-#define DHTPIN 48//Pin 
-#define DHTTYPE DHT22//Sensor
-DHT dht(DHTPIN, DHTTYPE);
-
-float temperatura;//Var para almacenar la lectura
-
-
 
 // LiquidCrystal ------------------------
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7); // DIR, E, RW, RS, D4, D5, D6, D7
@@ -56,8 +46,6 @@ int IO2 = 11;
 int IO3 = 12;
 int IO4 = 13;
 
-int BLAB1 = 43; // Señal de Bluetooth (Quitar DESPUES)
-int BLAB2 = 44; // Señal de Bluetooth (Quitar DESPUES)
 int LAB1 = 41;
 int LAB2 = 42;
 
@@ -180,8 +168,6 @@ void setup() {
   pinMode(WIFI, INPUT);
 
   // Barra T
-  pinMode(BLAB1, INPUT);  // Señal de Bluetooth (Quitar DESPUES)
-  pinMode(BLAB2, INPUT);  // Señal de Bluetooth (Quitar DESPUES)
   pinMode(LAB1, INPUT);
   pinMode(LAB2, INPUT);
 
@@ -200,17 +186,13 @@ void setup() {
 }
 
 void loop() {
-
-  temperatura = dht.readTemperature();
-  Serial.print(temperatura);
-  Serial.print(" C");
-  Serial.print("|");
-  Serial.print("ALGO");
-  delay(2000);
-  
   if (!logueado) {
     login();
   } else {
+    while (Serial.available()) {
+    delay(10);
+    Serial.write("in");
+  }
     controlarLuces();
     controlPorton();
     barraTransportadora();
@@ -628,7 +610,6 @@ void luces() {
 
 
 void controlPorton() {
-  delay(10);
   char c = Serial.read();
   texto += c;
   if (texto == "3") {
@@ -715,14 +696,16 @@ void cerrarPorton() {     // 2 vueltas izquierda
 
 // BARRA TRANSPORTADORA
 void barraTransportadora() {
-  if (digitalRead(BLAB1)) {
-    Lab1 = true;
+  while (Serial.available()) {
+    delay(10);
+    char c = Serial.read();
+    texto += c;
   }
-
-  if ( digitalRead(BLAB2)) {
+  if (texto == "i") {
+    Lab1 = true;
+  } else if (texto == "d") {
     Lab2 = true;
   }
-
   if (Lab1) {
     haciaLab2();
   }
@@ -740,17 +723,17 @@ void haciaLab1() { // HACIA LA DERECHA SENTIDO HORARIO
     tone(buzzerP, 700); // digitalWrite(buzzerP, HIGH);
     delay(3000);
     noTone(buzzerP); // digitalWrite(buzzerP, LOW);
-    
+
     while (digitalRead(LAB1) == LOW) {
       secuenciaUnPaso();
       mensajeLab("Corriendo hacia", "la Derecha");
     }
     mensajeLab("La muestra llego", "al LAB 1");
-    
+
     tone(buzzerP, 800); // digitalWrite(buzzerP, HIGH);
     delay(1000);
     noTone(buzzerP); // digitalWrite(buzzerP, LOW);
-    
+
     Lab2 = false;
   } else {
     mensajeLab("Poner Muestra", "en la banda LAB2");
@@ -765,17 +748,17 @@ void haciaLab2() { // HACIA LA IZQUIERDA SENTIDO ANTIHORARIO
     tone(buzzerP, 700); // digitalWrite(buzzerP, HIGH);
     delay(3000);
     noTone(buzzerP); // digitalWrite(buzzerP, LOW);
-    
+
     while (digitalRead(LAB2) == LOW) {
       secuenciaUnPaso();
       mensajeLab("Corriendo hacia", "la Izquierda");
     }
     mensajeLab("La muestra llego", "al LAB 2");
-    
+
     tone(buzzerP, 900); // digitalWrite(buzzerP, HIGH);
     delay(1000);
     noTone(buzzerP); // digitalWrite(buzzerP, LOW);
-    
+
     Lab1 = false;
   } else {
     mensajeLab("Poner Muestra", "en la banda LAB1");
@@ -818,7 +801,6 @@ void mensajeLab(String mensaje1, String mensaje2) {
 
 void controlarLuces() {
   while (Serial.available()) {
-    delay(10);
     char c = Serial.read();
     texto += c;
   }
