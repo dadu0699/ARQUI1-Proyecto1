@@ -615,9 +615,9 @@ void abrirPorton() {            // 2 vueltas derecha
 
   lcd.setCursor(2, 1);
   lcd.write(byte(1));
-  lcd.write(byte(2));
+  lcd.write(byte(3));
   lcd.print("ABRIENDO");
-  lcd.write(byte(2));
+  lcd.write(byte(3));
 
   motor.attach(PORTON);
   for (int i = 0; i <= 180; i++) {
@@ -636,9 +636,9 @@ void cerrarPorton() {     // 2 vueltas izquierda
 
   lcd.setCursor(2, 1);
   lcd.write(byte(0));
-  lcd.write(byte(2));
+  lcd.write(byte(3));
   lcd.print("CERRANDO");
-  lcd.write(byte(2));
+  lcd.write(byte(3));
 
   motor.attach(PORTON);
   for (int i = 180; i >= 0; i--) {
