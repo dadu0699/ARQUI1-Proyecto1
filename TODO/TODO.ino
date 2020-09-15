@@ -5,6 +5,9 @@
 #include <EEPROM.h>
 #include <Servo.h>
 
+/*-TEMPERATURA-*/
+int valor;
+
 // LiquidCrystal ------------------------
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7); // DIR, E, RW, RS, D4, D5, D6, D7
 // END LiquidCrystal --------------------
@@ -154,6 +157,9 @@ void setup() {
   lcd.createChar(4, checkE);
   lcd.createChar(5, ampersand);
 
+  //TEMPERATURA
+  pinMode(A1, INPUT);
+
   //LUCES
   pinMode(LL1, OUTPUT);
   pinMode(LL2, OUTPUT);
@@ -189,14 +195,15 @@ void loop() {
   if (!logueado) {
     login();
   } else {
-    while (Serial.available()) {
-    delay(10);
-    Serial.write("in");
-  }
+    delay(100);
+    char c = Serial.read();
+    texto = c;
     controlarLuces();
     controlPorton();
+    controlTemperatura();
     barraTransportadora();
   }
+  //controlTemperatura();
 }
 
 void limpiarEEPROM() {
@@ -205,7 +212,6 @@ void limpiarEEPROM() {
     EEPROM.write(i, 0);
     delay(50);
   }
-  Serial.println(">> MEMORIA LIMPIA");
 }
 
 bool buscarEEPROM(String usr, String pwd) {
@@ -244,8 +250,6 @@ void crearAdministrador() {
   registro += sizeof(Usuario);
   EEPROM.update(0, registro);
   delay(50);
-
-  Serial.println(">> ADMINISTRADOR AGREGADO");
 }
 
 void registrarEEPROM(String user, String password) {
@@ -426,6 +430,7 @@ void iniciarSesion(String pass) {
     lcd.print("PERMITIDO");
 
     contadorIntentos = 0;
+    Serial.print("in");
     luces();
   } else {
     contadorIntentos++;
@@ -610,8 +615,6 @@ void luces() {
 
 
 void controlPorton() {
-  char c = Serial.read();
-  texto += c;
   if (texto == "3") {
     posicion = 1;
   } else {
@@ -625,7 +628,7 @@ void controlPorton() {
       while (Serial.available()) {
         delay(10);
         char c = Serial.read();
-        texto += c;
+        texto = c;
       }
       if (texto == "3") {
         posicion = 1;
@@ -684,8 +687,6 @@ void cerrarPorton() {     // 2 vueltas izquierda
     motor.write(i);
     delay(25);
   }
-
-  Serial.println(">> LED AMARILLA");
   tone(buzzerP, 500); // digitalWrite(buzzerP, HIGH);
   digitalWrite(portonCerrado, HIGH);
   delay(3000);
@@ -696,11 +697,6 @@ void cerrarPorton() {     // 2 vueltas izquierda
 
 // BARRA TRANSPORTADORA
 void barraTransportadora() {
-  while (Serial.available()) {
-    delay(10);
-    char c = Serial.read();
-    texto += c;
-  }
   if (texto == "i") {
     Lab1 = true;
   } else if (texto == "d") {
@@ -800,48 +796,50 @@ void mensajeLab(String mensaje1, String mensaje2) {
 }
 
 void controlarLuces() {
-  while (Serial.available()) {
-    char c = Serial.read();
-    texto += c;
+  if (texto == "1") {
+    digitalWrite(LL1, HIGH);
+    digitalWrite(LL2, HIGH);
+    digitalWrite(LE, HIGH);
+    digitalWrite(LS, HIGH);
   }
-  if (texto.length() > 0) {
-    Serial.println(texto);
-    if (texto == "gon") {
-      digitalWrite(LL1, HIGH);
-      digitalWrite(LL2, HIGH);
-      digitalWrite(LE, HIGH);
-      digitalWrite(LS, HIGH);
-    }
-    if (texto == "goff") {
-      digitalWrite(LL1, LOW);
-      digitalWrite(LL2, LOW);
-      digitalWrite(LE, LOW);
-      digitalWrite(LS, LOW);
-    }
-    if (texto == "eon") {
-      digitalWrite(LE, HIGH);
-    }
-    if (texto == "eoff") {
-      digitalWrite(LE, LOW);
-    }
-    if (texto == "l1on") {
-      digitalWrite(LL1, HIGH);
-    }
-    if (texto == "l1off") {
-      digitalWrite(LL1, LOW);
-    }
-    if (texto == "l2on") {
-      digitalWrite(LL2, HIGH);
-    }
-    if (texto == "l2off") {
-      digitalWrite(LL2, LOW);
-    }
-    if (texto == "son") {
-      digitalWrite(LS, HIGH);
-    }
-    if (texto == "soff") {
-      digitalWrite(LS, LOW);
-    }
-    texto = "";
+  if (texto == "2") {
+    digitalWrite(LL1, LOW);
+    digitalWrite(LL2, LOW);
+    digitalWrite(LE, LOW);
+    digitalWrite(LS, LOW);
   }
+  if (texto == "5") {
+    digitalWrite(LE, HIGH);
+  }
+  if (texto == "6") {
+    digitalWrite(LE, LOW);
+  }
+  if (texto == "7") {
+    digitalWrite(LL1, HIGH);
+  }
+  if (texto == "8") {
+    digitalWrite(LL1, LOW);
+  }
+  if (texto == "9") {
+    digitalWrite(LL2, HIGH);
+  }
+  if (texto == "0") {
+    digitalWrite(LL2, LOW);
+  }
+  if (texto == "a") {
+    digitalWrite(LS, HIGH);
+  }
+  if (texto == "b") {
+    digitalWrite(LS, LOW);
+  }
+}
+
+void controlTemperatura() {
+  
+    valor = analogRead(A1);
+    float mv = (valor / 1024.0) * 5000;
+    float temperatura = mv / 10;
+    Serial.print(temperatura);
+    delay(1000);
+  
 }
