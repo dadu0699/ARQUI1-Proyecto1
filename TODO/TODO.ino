@@ -430,7 +430,6 @@ void iniciarSesion(String pass) {
     lcd.print("PERMITIDO");
 
     contadorIntentos = 0;
-    Serial.print("in");
     luces();
   } else {
     contadorIntentos++;
@@ -611,6 +610,9 @@ void luces() {
   digitalWrite(LE, HIGH);
   digitalWrite(LS, HIGH);
   lcd.clear();
+
+  Serial.print("in");
+  delay(3000);
 }
 
 
@@ -835,11 +837,11 @@ void controlarLuces() {
 }
 
 void controlTemperatura() {
-  
-    valor = analogRead(A1);
-    float mv = (valor / 1024.0) * 5000;
-    float temperatura = mv / 10;
-    Serial.print(temperatura);
-    delay(1000);
-  
+
+  valor = analogRead(A1);
+  float mv = (valor / 1024.0) * 5000;
+  float temperatura = mv / 10;
+  Serial.print(temperatura);
+  delay(1000);
+
 }
